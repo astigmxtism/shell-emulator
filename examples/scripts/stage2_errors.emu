@@ -1,0 +1,6 @@
+ls /etc
+no_such_command arg
+exit now
+cd /etc
+
+ls /
