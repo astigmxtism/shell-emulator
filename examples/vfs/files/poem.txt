@@ -1,0 +1,4 @@
+roses are red
+violets are blue
+vfs lives in memory
+and so do you
