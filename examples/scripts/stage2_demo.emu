@@ -1,0 +1,3 @@
+ls
+cd /etc
+ls -l /etc
