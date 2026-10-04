@@ -21,16 +21,14 @@ class RunScriptTest(unittest.TestCase):
     """Проверки run_script."""
 
     def test_input_and_output_are_shown(self):
-        collector, _ = run_text(self, "ls a\ncd b\n")
+        collector, _ = run_text(self, "ls /etc\ncd /tmp\n")
         inputs = collector.texts(INPUT)
-        self.assertTrue(inputs[0].endswith("$ ls a"))
-        self.assertTrue(inputs[1].endswith("$ cd b"))
-        self.assertEqual(collector.texts("out"), [
-            "ls: args = ['a']", "cd: args = ['b']",
-        ])
+        self.assertTrue(inputs[0].endswith("$ ls /etc"))
+        self.assertTrue(inputs[1].endswith("$ cd /tmp"))
+        self.assertEqual(collector.texts("out"), ["motd"])
 
     def test_erroneous_lines_are_reported_and_skipped(self):
-        collector, _ = run_text(self, "ls a\nbad\nexit 1\ncd b\n")
+        collector, _ = run_text(self, "ls /etc\nbad\nexit 1\ncd /tmp\n")
         errors = collector.texts(ERR)
         self.assertIn("bad: command not found", errors)
         self.assertIn("[script] line 2: error, line skipped", errors)

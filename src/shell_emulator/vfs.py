@@ -9,6 +9,9 @@ PARENT = ".."
 DEFAULT_LABEL = "default"
 DEFAULT_OWNER = "user"
 DEFAULT_GROUP = "user"
+DIR_MODE = "drwxr-xr-x"
+FILE_MODE = "-rw-r--r--"
+DIR_SIZE = 4096
 REASON_NOT_FOUND = "No such file or directory"
 REASON_NOT_DIR = "Not a directory"
 
@@ -39,6 +42,16 @@ class Node:
     owner: str = DEFAULT_OWNER
     group: str = DEFAULT_GROUP
     children: dict = field(default_factory=dict)
+
+    @property
+    def size(self):
+        """Размер в байтах (для каталога - условное значение)."""
+        return DIR_SIZE if self.is_dir else len(self.content)
+
+    @property
+    def mode(self):
+        """Строка прав доступа в стиле ls -l."""
+        return DIR_MODE if self.is_dir else FILE_MODE
 
 
 def split_parts(path):
