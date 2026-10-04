@@ -15,6 +15,8 @@ Python. Практическая работа, вариант №2.
   сообщается в окне красным цветом.
 - эмулятор настраивается параметрами командной строки и JSON-файлом, а
   также умеет выполнять стартовый скрипт, имитируя диалог с пользователем.
+- источник виртуальной файловой системы (VFS) - каталог на диске; он
+  читается в память, все операции происходят только в памяти.
 
 ## 2. Описание всех функций и настроек
 
@@ -62,6 +64,20 @@ JSON-объект с двумя необязательными ключами:
 - ошибка чтения самого скрипта: `[script] error: ...`;
 - `exit` в скрипте завершает скрипт и закрывает эмулятор.
 
+### 2.5. Виртуальная файловая система
+
+- путь не указан - создаётся VFS по умолчанию в памяти (имя `default`);
+- `--vfs PATH` - каталог рекурсивно читается в память; файлы на диске
+  не распаковываются и не изменяются, символические ссылки пропускаются;
+- путь не найден или указывает не на каталог (неверный формат) - в
+  окне печатается `[vfs] error: ...`, после чего используется VFS по
+  умолчанию;
+- имя VFS (имя каталога) показывается в заголовке окна и приглашении.
+
+Примеры VFS: `examples/vfs/minimal` (один файл), `examples/vfs/files`
+(несколько файлов, есть скрытый), `examples/vfs/deep` (вложенность в
+шесть уровней, есть файл с русским текстом).
+
 ### 2.6. Команды
 
 | Команда | Описание |
@@ -103,6 +119,16 @@ scripts/stage2_config.sh    # конфигурация и приоритет к�
 scripts/stage2_errors.sh    # ошибки конфигурации и стартового скрипта
 ```
 
+```sh
+scripts/stage3_cli.sh       # варианты VFS через --vfs, ошибки загрузки
+scripts/stage3_config.sh    # варианты VFS через конфигурационный файл
+scripts/stage3_script.sh    # варианты VFS со стартовым скриптом
+```
+
+Стартовый скрипт `examples/scripts/stage3_all.emu` проверяет все команды
+этапов 1-3 (`ls`, `cd`, `exit`), включая ошибки; он запускается с VFS
+`examples/vfs/deep`.
+
 ## 4. Примеры использования
 
 Интерактивный сеанс:
@@ -129,11 +155,11 @@ user@default:/$ exit
 [debug] config_path = examples/config/full.json
 [debug] vfs_path = examples/vfs/minimal (command line)
 [debug] script_path = examples/scripts/stage2_demo.emu (config file)
-user@default:/$ ls
+user@minimal:/$ ls
 ls: args = []
-user@default:/$ cd /etc
+user@minimal:/$ cd /etc
 cd: args = ['/etc']
-user@default:/$ ls -l /etc
+user@minimal:/$ ls -l /etc
 ls: args = ['-l', '/etc']
 ```
 
@@ -164,4 +190,15 @@ user@default:/$ cd /etc
 cd: args = ['/etc']
 user@default:/$ ls /
 ls: args = ['/']
+```
+
+Ошибка загрузки VFS (неверный формат; запуск продолжается с VFS по
+умолчанию):
+
+```text
+[debug] config_path = <not set>
+[debug] vfs_path = README.md (command line)
+[debug] script_path = <not set> (not set)
+[vfs] error: invalid VFS format: 'README.md' is not a directory
+[vfs] using the default in-memory VFS
 ```

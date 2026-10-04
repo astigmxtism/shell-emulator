@@ -1,0 +1,9 @@
+ls
+ls -l /home
+ls a b c
+cd /home/alice
+cd
+cd /etc app
+foo
+exit now
+exit

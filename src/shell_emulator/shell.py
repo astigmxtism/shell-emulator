@@ -2,20 +2,24 @@
 from shell_emulator.commands import COMMANDS
 from shell_emulator.common import CommandError, Result, ERR, INPUT, OUT
 from shell_emulator.parser import parse_line
+from shell_emulator.vfs import ROOT_PATH, default_vfs
 
 USER_NAME = "user"
-DEFAULT_LABEL = "default"
-ROOT_PATH = "/"
 
 
 class Session:
-    """Состояние сеанса: пользователь, текущий каталог, признак выхода."""
+    """Состояние сеанса: VFS, пользователь, текущий каталог, выход."""
 
-    def __init__(self, label=DEFAULT_LABEL):
+    def __init__(self, vfs):
+        self.vfs = vfs
         self.user = USER_NAME
-        self.label = label
         self.cwd = ROOT_PATH
         self.finished = False
+
+    @property
+    def label(self):
+        """Имя VFS, показываемое в приглашении и заголовке окна."""
+        return self.vfs.label
 
     def prompt(self):
         """Вернуть строку приглашения вида user@vfs:/path$ ."""
@@ -25,8 +29,8 @@ class Session:
 class Shell:
     """Интерпретатор: разбирает строку и вызывает нужную команду."""
 
-    def __init__(self, session=None):
-        self.session = session or Session()
+    def __init__(self, vfs=None):
+        self.session = Session(vfs or default_vfs())
 
     def execute(self, line):
         """Выполнить одну строку; вернуть Result с выводом и ошибками."""
