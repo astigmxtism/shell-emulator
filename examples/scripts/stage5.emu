@@ -1,0 +1,27 @@
+cd /home/alice/projects/emulator
+ls -l
+chown root README.txt
+ls -l
+chown :staff README.txt
+chown bob:dev README.txt
+ls -l
+chown carol: README.txt
+ls -l
+chown erin src tests
+ls -l
+chown dave:eng /home/alice/music/list.txt /etc/app/app.conf
+ls -l /home/alice/music /etc/app
+chown -R frank:ops /home/alice
+ls -l /home/alice /home/alice/projects
+ls -l /home/alice/projects/emulator/src
+cd /
+chown
+chown root
+chown :
+chown 1bad README.txt
+chown root:9grp /docs/russian.txt
+chown root /no/such/file
+chown root /docs/russian.txt /no/such/file
+chown -x root /docs/russian.txt
+chown --recursive root /docs
+ls -l /docs
