@@ -17,6 +17,7 @@ Python. Практическая работа, вариант №2.
   также умеет выполнять стартовый скрипт, имитируя диалог с пользователем.
 - источник виртуальной файловой системы (VFS) - каталог на диске; он
   читается в память, все операции происходят только в памяти.
+- команды `ls` и `cd` работают с VFS, добавлены `tac` и `cal`.
 
 ## 2. Описание всех функций и настроек
 
@@ -82,9 +83,29 @@ JSON-объект с двумя необязательными ключами:
 
 | Команда | Описание |
 |---------|----------|
-| `ls`    | заглушка: печатает своё имя и аргументы |
-| `cd`    | заглушка: печатает своё имя и аргументы |
+| `ls`    | список файлов и каталогов VFS |
+| `cd`    | смена текущего каталога |
+| `tac`   | вывод строк файлов в обратном порядке |
+| `cal`   | календарь месяца или года |
 | `exit`  | завершение работы эмулятора |
+
+**`ls [-a] [-l] [ПУТЬ...]`** - без аргументов показывает текущий каталог.
+Скрытые записи (с точки) видны только с `-a` (тогда добавляются `.` и
+`..`). `-l` - подробный формат: права, владелец, группа, размер, имя.
+Если путей несколько, перед каждым каталогом печатается заголовок
+`путь:`, пути-файлы печатаются первыми. Недоступный путь даёт `ls: cannot
+access 'x': No such file or directory`, остальные пути всё равно выводятся.
+
+**`cd [КАТАЛОГ]`** - абсолютные и относительные пути, `.` и `..`; без
+аргумента - в корень VFS. Ошибки: `No such file or directory`, `Not a
+directory`, `too many arguments`.
+
+**`tac ФАЙЛ...`** - строки каждого файла с конца. Ошибки: нет операнда,
+каталог (`Is a directory`), нет файла.
+
+**`cal [[МЕСЯЦ] ГОД]`** - без аргументов текущий месяц; `cal 2024` - весь
+2024 год; `cal 3 2024` - март 2024. Месяц 1-12, год 1-9999, иначе
+`illegal month value` / `illegal year value`.
 
 ## 3. Сборка, запуск и тесты
 
@@ -129,23 +150,49 @@ scripts/stage3_script.sh    # варианты VFS со стартовым ск�
 этапов 1-3 (`ls`, `cd`, `exit`), включая ошибки; он запускается с VFS
 `examples/vfs/deep`.
 
+Стартовый скрипт `examples/scripts/stage4.emu` проверяет все режимы `ls`,
+`cd`, `tac`, `cal` и ошибки: `./run.sh --vfs examples/vfs/deep --script
+examples/scripts/stage4.emu`.
+
 ## 4. Примеры использования
 
-Интерактивный сеанс:
+Интерактивный сеанс (VFS `examples/vfs/deep`):
 
 ```text
 [debug] config_path = <not set>
-[debug] vfs_path = <not set> (not set)
+[debug] vfs_path = examples/vfs/deep (command line)
 [debug] script_path = <not set> (not set)
-user@default:/$ ls -l /home
-ls: args = ['-l', '/home']
-user@default:/$ cd docs
-cd: args = ['docs']
-user@default:/$ foo bar
+user@deep:/$ ls
+docs  etc  home  var
+user@deep:/$ ls -l /home/alice
+drwxr-xr-x user     user       4096 music
+drwxr-xr-x user     user       4096 projects
+user@deep:/$ cd /home/alice/projects/emulator
+user@deep:/home/alice/projects/emulator$ ls -l
+-rw-r--r-- user     user         33 README.txt
+drwxr-xr-x user     user       4096 src
+drwxr-xr-x user     user       4096 tests
+user@deep:/home/alice/projects/emulator$ tac README.txt
+Emulator project, 6 levels deep.
+user@deep:/home/alice/projects/emulator$ cd /docs/russian.txt
+cd: /docs/russian.txt: Not a directory
+user@deep:/home/alice/projects/emulator$ tac /var/log/app.log
+stopped
+running
+started
+user@deep:/home/alice/projects/emulator$ cal 3 2024
+     March 2024
+Su Mo Tu We Th Fr Sa
+                1  2
+ 3  4  5  6  7  8  9
+10 11 12 13 14 15 16
+17 18 19 20 21 22 23
+24 25 26 27 28 29 30
+31
+user@deep:/home/alice/projects/emulator$ foo
 foo: command not found
-user@default:/$ exit now
+user@deep:/home/alice/projects/emulator$ exit now
 exit: too many arguments
-user@default:/$ exit
 ```
 
 Параметры из файла и приоритет командной строки (значение `--vfs`
@@ -156,11 +203,13 @@ user@default:/$ exit
 [debug] vfs_path = examples/vfs/minimal (command line)
 [debug] script_path = examples/scripts/stage2_demo.emu (config file)
 user@minimal:/$ ls
-ls: args = []
+hello.txt
 user@minimal:/$ cd /etc
-cd: args = ['/etc']
+cd: /etc: No such file or directory
+[script] line 2: error, line skipped
 user@minimal:/$ ls -l /etc
-ls: args = ['-l', '/etc']
+ls: cannot access '/etc': No such file or directory
+[script] line 3: error, line skipped
 ```
 
 Ошибка в конфигурации - значение не строка (запуск продолжается):
@@ -179,7 +228,7 @@ ls: args = ['-l', '/etc']
 [debug] vfs_path = <not set> (not set)
 [debug] script_path = examples/scripts/stage2_errors.emu (command line)
 user@default:/$ ls /etc
-ls: args = ['/etc']
+motd
 user@default:/$ no_such_command arg
 no_such_command: command not found
 [script] line 2: error, line skipped
@@ -187,9 +236,8 @@ user@default:/$ exit now
 exit: too many arguments
 [script] line 3: error, line skipped
 user@default:/$ cd /etc
-cd: args = ['/etc']
-user@default:/$ ls /
-ls: args = ['/']
+user@default:/etc$ ls /
+etc  home  tmp
 ```
 
 Ошибка загрузки VFS (неверный формат; запуск продолжается с VFS по

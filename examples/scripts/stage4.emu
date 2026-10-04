@@ -1,0 +1,36 @@
+ls
+ls -a
+ls -l
+ls -la /home/alice
+ls /home/alice /etc
+ls /docs/russian.txt /etc
+ls /no/such/dir
+ls -q
+ls --color
+cd /home/alice/projects
+ls
+cd emulator/src
+ls -l
+cd ../..
+ls
+cd /home/alice
+cd ..
+cd
+cd /docs/russian.txt
+cd /no/such/dir
+cd a b
+tac /docs/russian.txt
+tac /var/log/app.log /etc/app/app.conf
+tac /docs
+tac /no/such/file
+tac
+tac -x /var/log/app.log
+cal
+cal 2 2024
+cal 2025
+cal 0 2024
+cal 13 2024
+cal 5 0
+cal abc
+cal 1 2 3
+cal -z

@@ -45,11 +45,11 @@ class PrepareTest(unittest.TestCase):
 
     def test_startup_runs_script(self):
         folder = make_temp_dir(self)
-        script = write_file(folder, "s.emu", "ls one\n")
+        script = write_file(folder, "s.emu", "ls /etc\n")
         shell, settings, notices = prepare(["--script", script])
         collector = Collector()
         run_startup(shell, settings, notices, collector)
-        self.assertEqual(collector.texts("out"), ["ls: args = ['one']"])
+        self.assertEqual(collector.texts("out"), ["motd"])
 
     def test_example_scripts_run(self):
         path = os.path.join(REPO_ROOT, "examples", "scripts")

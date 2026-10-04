@@ -1,4 +1,4 @@
-"""Тесты ядра оболочки: команды-заглушки, ошибки, exit."""
+"""Тесты ядра оболочки: выполнение строк, ошибки, exit."""
 import unittest
 
 from helpers import Collector
@@ -6,17 +6,18 @@ from shell_emulator.common import ERR, INPUT, OUT
 from shell_emulator.shell import Shell
 
 
-class ShellStubTest(unittest.TestCase):
-    """Проверки выполнения строк на этапе прототипа."""
+class ShellTest(unittest.TestCase):
+    """Проверки выполнения строк."""
 
-    def test_ls_stub_prints_name_and_args(self):
-        result = Shell().execute("ls -l /tmp")
-        self.assertEqual(result.out, "ls: args = ['-l', '/tmp']")
+    def test_ls_lists_directory(self):
+        result = Shell().execute("ls /home/user")
+        self.assertEqual(result.out, "docs  notes.txt  todo.txt")
         self.assertEqual(result.err, "")
 
-    def test_cd_stub_prints_name_and_args(self):
-        result = Shell().execute("cd /home")
-        self.assertEqual(result.out, "cd: args = ['/home']")
+    def test_cd_changes_prompt(self):
+        shell = Shell()
+        shell.execute("cd /etc")
+        self.assertEqual(shell.session.prompt(), "user@default:/etc$ ")
 
     def test_unknown_command_reports_error(self):
         result = Shell().execute("foo bar")
@@ -40,9 +41,9 @@ class ShellStubTest(unittest.TestCase):
 
     def test_run_and_emit_shows_prompt_and_output(self):
         collector = Collector()
-        Shell().run_and_emit("ls a", collector)
+        Shell().run_and_emit("ls /etc", collector)
         self.assertEqual(collector.items[0][0], INPUT)
-        self.assertTrue(collector.items[0][1].endswith("$ ls a"))
+        self.assertTrue(collector.items[0][1].endswith("$ ls /etc"))
         self.assertEqual(collector.items[1][0], OUT)
 
     def test_run_and_emit_marks_errors(self):
