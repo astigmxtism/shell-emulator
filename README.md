@@ -18,6 +18,7 @@ Python. Практическая работа, вариант №2.
 - источник виртуальной файловой системы (VFS) - каталог на диске; он
   читается в память, все операции происходят только в памяти.
 - команды `ls` и `cd` работают с VFS, добавлены `tac` и `cal`.
+- `chown` изменяет владельца и группу узлов VFS только в памяти.
 
 ## 2. Описание всех функций и настроек
 
@@ -87,6 +88,7 @@ JSON-объект с двумя необязательными ключами:
 | `cd`    | смена текущего каталога |
 | `tac`   | вывод строк файлов в обратном порядке |
 | `cal`   | календарь месяца или года |
+| `chown` | смена владельца и группы (только в памяти) |
 | `exit`  | завершение работы эмулятора |
 
 **`ls [-a] [-l] [ПУТЬ...]`** - без аргументов показывает текущий каталог.
@@ -106,6 +108,13 @@ directory`, `too many arguments`.
 **`cal [[МЕСЯЦ] ГОД]`** - без аргументов текущий месяц; `cal 2024` - весь
 2024 год; `cal 3 2024` - март 2024. Месяц 1-12, год 1-9999, иначе
 `illegal month value` / `illegal year value`.
+
+**`chown [-R] ВЛАДЕЛЕЦ[:ГРУППА] ФАЙЛ...`** - меняет владельца и/или группу
+узлов VFS. Формы аргумента: `bob` (только владелец), `bob:dev` (владелец и
+группа), `:dev` (только группа), `bob:` (группа становится равной
+владельцу). `-R` - рекурсивно по каталогу. Имена начинаются с буквы или
+`_` и содержат буквы, цифры, `_`, `.`, `-`. Проверки прав нет (эмулируется
+суперпользователь); диск не затрагивается, изменения видны в `ls -l`.
 
 ## 3. Сборка, запуск и тесты
 
@@ -154,6 +163,10 @@ scripts/stage3_script.sh    # варианты VFS со стартовым ск�
 `cd`, `tac`, `cal` и ошибки: `./run.sh --vfs examples/vfs/deep --script
 examples/scripts/stage4.emu`.
 
+Стартовый скрипт `examples/scripts/stage5.emu` проверяет все режимы `chown`
+и ошибки: `./run.sh --vfs examples/vfs/deep --script
+examples/scripts/stage5.emu`.
+
 ## 4. Примеры использования
 
 Интерактивный сеанс (VFS `examples/vfs/deep`):
@@ -162,20 +175,21 @@ examples/scripts/stage4.emu`.
 [debug] config_path = <not set>
 [debug] vfs_path = examples/vfs/deep (command line)
 [debug] script_path = <not set> (not set)
-user@deep:/$ ls
-docs  etc  home  var
-user@deep:/$ ls -l /home/alice
-drwxr-xr-x user     user       4096 music
-drwxr-xr-x user     user       4096 projects
 user@deep:/$ cd /home/alice/projects/emulator
 user@deep:/home/alice/projects/emulator$ ls -l
 -rw-r--r-- user     user         33 README.txt
 drwxr-xr-x user     user       4096 src
 drwxr-xr-x user     user       4096 tests
-user@deep:/home/alice/projects/emulator$ tac README.txt
-Emulator project, 6 levels deep.
-user@deep:/home/alice/projects/emulator$ cd /docs/russian.txt
-cd: /docs/russian.txt: Not a directory
+user@deep:/home/alice/projects/emulator$ chown bob:dev README.txt
+user@deep:/home/alice/projects/emulator$ chown -R carol src
+user@deep:/home/alice/projects/emulator$ ls -l
+-rw-r--r-- bob      dev          33 README.txt
+drwxr-xr-x carol    user       4096 src
+drwxr-xr-x user     user       4096 tests
+user@deep:/home/alice/projects/emulator$ chown root nothing.txt
+chown: cannot access 'nothing.txt': No such file or directory
+user@deep:/home/alice/projects/emulator$ chown 1bad README.txt
+chown: invalid user: '1bad'
 user@deep:/home/alice/projects/emulator$ tac /var/log/app.log
 stopped
 running
@@ -191,8 +205,6 @@ Su Mo Tu We Th Fr Sa
 31
 user@deep:/home/alice/projects/emulator$ foo
 foo: command not found
-user@deep:/home/alice/projects/emulator$ exit now
-exit: too many arguments
 ```
 
 Параметры из файла и приоритет командной строки (значение `--vfs`

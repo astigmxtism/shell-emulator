@@ -43,6 +43,19 @@ class Node:
     group: str = DEFAULT_GROUP
     children: dict = field(default_factory=dict)
 
+    def set_owner(self, owner, group):
+        """Изменить владельца и/или группу (None - не менять)."""
+        if owner:
+            self.owner = owner
+        if group:
+            self.group = group
+
+    def walk(self):
+        """Обойти узел и всех его потомков."""
+        yield self
+        for name in sorted(self.children):
+            yield from self.children[name].walk()
+
     @property
     def size(self):
         """Размер в байтах (для каталога - условное значение)."""

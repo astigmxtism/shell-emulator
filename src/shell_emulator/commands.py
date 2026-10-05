@@ -1,6 +1,7 @@
-"""Реализации команд эмулятора: ls, cd, tac, cal, exit."""
+"""Реализации команд эмулятора: ls, cd, tac, cal, chown, exit."""
 import calendar
 import datetime
+import re
 
 from shell_emulator.common import CommandError, Result
 from shell_emulator.vfs import (
@@ -19,6 +20,10 @@ NO_OPTIONS = ""
 MAX_CAL_OPERANDS = 2
 MIN_MONTH, MAX_MONTH = 1, 12
 MIN_YEAR, MAX_YEAR = 1, 9999
+GROUP_SEPARATOR = ":"
+RECURSIVE_FLAG = "R"
+CHOWN_OPTIONS = "R"
+NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 
 
 def is_option(token):
@@ -206,9 +211,50 @@ def cmd_cal(session, args):
     return Result(out="\n".join(line.rstrip() for line in text.splitlines()))
 
 
+def check_name(kind, name, spec):
+    """Проверить имя пользователя или группы из аргумента chown."""
+    if name and not NAME_PATTERN.match(name):
+        raise CommandError(f"chown: invalid {kind}: '{spec}'")
+
+
+def parse_owner_spec(spec):
+    """Разобрать ВЛАДЕЛЕЦ[:ГРУППА]; вернуть (владелец, группа) или None."""
+    owner, separator, group = spec.partition(GROUP_SEPARATOR)
+    check_name("user", owner, spec)
+    check_name("group", group, spec)
+    if not owner and not group:
+        raise CommandError(f"chown: invalid user: '{spec}'")
+    if separator and not group:
+        group = owner
+    return owner or None, group or None
+
+
+def cmd_chown(session, args):
+    """chown [-R] ВЛАДЕЛЕЦ[:ГРУППА] ФАЙЛ...: сменить владельца в памяти."""
+    flags, operands = split_options("chown", args, CHOWN_OPTIONS)
+    if not operands:
+        raise CommandError("chown: missing operand")
+    spec, *targets = operands
+    if not targets:
+        raise CommandError(f"chown: missing operand after '{spec}'")
+    owner, group = parse_owner_spec(spec)
+    errors = []
+    for operand in targets:
+        try:
+            _, node = find_node(session, operand)
+        except VFSError as error:
+            errors.append(f"chown: cannot access '{operand}': {error}")
+            continue
+        nodes = node.walk() if RECURSIVE_FLAG in flags else [node]
+        for item in nodes:
+            item.set_owner(owner, group)
+    return Result(err="\n".join(errors))
+
+
 COMMANDS = {
     "cal": cmd_cal,
     "cd": cmd_cd,
+    "chown": cmd_chown,
     "exit": cmd_exit,
     "ls": cmd_ls,
     "tac": cmd_tac,
